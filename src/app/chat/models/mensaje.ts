@@ -5,5 +5,6 @@ export class Mensaje {
   //Podriem fer que fós un objecte Usuari i després relacionar els missatges de cada usuari etc..
   username:string = "";
   tipo:string = "";
+  color:string="";
 
 }

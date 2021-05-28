@@ -17,20 +17,24 @@
             </li>
           </ul>
         </div>
-        <div class="card-body" style="overflow-y: scroll;height: 360px;" *ngIf="connectat">
+        <div class="card-body" #scrollChat [scrollTop]="scrollChat.scrollHeight" style="overflow-y: scroll;height: 360px;" *ngIf="connectat">
           <ul class="list-group">
             <!-- Indiquem que per cada element(els i diem mensaje) de mensajes faci un <li> i posi el text -->
-            <li class="list-group-item list-group-item-light" *ngFor="let mensaje of mensajes"> {{mensaje.fecha | date:'shortTime'}} : {{mensaje.texto}}</li>
+            <li class="list-group-item list-group-item-light" *ngFor="let mensaje of mensajes">
+              <span *ngIf="mensaje.tipo=='NUEVO_USUARIO'">{{mensaje.fecha | date:'shortTime'}} - {{mensaje.texto}} </span>
+              <span *ngIf="mensaje.tipo=='MENSAJE'">{{mensaje.fecha | date:'shortTime'}} - <span [ngStyle]="{'color': mensaje.color}">{{mensaje.username}}</span> dice :<br> {{mensaje.texto}}</span>
+            </li>
           </ul>
         </div>
         <div class="card-footer" *ngIf="connectat">
           <form class="form-inline">
             <div class="form-group mx-3">
               <!-- Vinculem amb ngModel el valor del input al atribut de l'objete mensaje.texto del controlador -->
-              <input class="form-control" type="text" placeholder="Escribe un mensaje" name="texto" [(ngModel)]="mensaje.texto ">
+              <input class="form-control" type="text" placeholder="Escribe un mensaje" name="texto" [(ngModel)]="mensaje.texto " (keyup)="escribiendo()">
               <button class="btn btn-primary" type="submit" (click)="enviarMensaje()">Enviar</button>
             </div>
           </form>
+          <div class="alert alert-info" *ngIf="escribiendoText!=''">{{escribiendoText}}</div>
         </div>
       </div>
     </div>

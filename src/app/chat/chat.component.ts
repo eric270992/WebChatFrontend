@@ -16,6 +16,7 @@ export class ChatComponent implements OnInit {
   connectat:boolean = false;
   mensaje:Mensaje = new Mensaje();
   mensajes:Mensaje[] = [];
+  escribiendoText:string = "";
 
   constructor() { }
 
@@ -52,9 +53,32 @@ export class ChatComponent implements OnInit {
         let missatge:Mensaje = JSON.parse(event.body) as Mensaje;
         //La data ens la hem de converitr a tipus date ja que desde el backend ens arroiba com a LONG
         missatge.fecha = new Date(missatge.fecha);
+        //Primer mirem que sigui del mateix client que acaba de conectar-se, ja que sinó el color l'enviarà a tothom també.
+        //Mirem que el missatge que rebem del borker es del tipus nuevo_usuario i que el nom també és el mateix
+        if(!this.mensaje.color && missatge.tipo=="NUEVO_USUARIO" && this.mensaje.username == missatge.username){
+          this.mensaje.color = missatge.color;
+        }
         this.mensajes.push(missatge);
         console.log(missatge);
       });
+
+      //Ens subscirbim als events que rebem del backedn /chat/escribiendo
+      this.clientStomp.subscribe('/chat/escribiendo',(event)=>{
+        //Assignem el text de que està escribint que rebrem recordem desde el backend ens ho retornà al subsciruren als event
+        this.escribiendoText = event.body;
+        setTimeout(()=>{
+          //PAssats 3s borrem elt ext
+          this.escribiendoText="";
+        },5000)
+      });
+
+      //Dins del onConnect enviem el nom d'usuari el broker
+      //Com que el onConnect s'excutarà en el moment que clicquem connectar, i només ho podrem fer si no estem ja conectats i posem
+      //username  indiquem que el missatge serà del tipus NUEVO_USUARIO i enviem aquest objecte missatge al broker
+      //que el rebrà i també té una validació segons el tipus
+      this.mensaje.tipo='NUEVO_USUARIO';
+      this.clientStomp.publish({destination:'/app/mensaje',body: JSON.stringify(this.mensaje)});
+
     }
 
     //Event per escoltar quant ens desconectem
@@ -87,9 +111,16 @@ export class ChatComponent implements OnInit {
     //Publiquem/enviem un missatge al broker
     //La destinació és el @MessageMapping que trobem al backend de Spring amb el seu prefixe
     //El body serà l'objecte Mensaje que omplim però l'hem de passar amb stringify
+    //Canviem el tipo del missatge a missatge, cosa que afectarà a la vista i també al backend
+    this.mensaje.tipo='MENSAJE';
     this.clientStomp.publish({destination:'/app/mensaje',body: JSON.stringify(this.mensaje)});
-    //Resetejem el text del missatge
+    //Resetejem el text del missatge, mantenim el username
     this.mensaje.texto='';
+  }
+
+  escribiendo(){
+    //fa una crida al backend a /app/escribiendo que retornarà el text amb Username esta escribiendo...
+    this.clientStomp.publish({destination:'/app/escribiendo',body: JSON.stringify(this.mensaje.username)});
   }
 
 }

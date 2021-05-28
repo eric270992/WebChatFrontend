@@ -1,0 +1,42 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <ul class="nav nav-pills card-header-pills">
+            <!-- Mostrem input per posar nom d'usuari -->
+            <li class="nav-item" style="margin-right: 1%;" *ngIf="!connectat">
+              <input type="text" class="form-control" name="username" [(ngModel)]="mensaje.username" placeholder="Tu nombre de usuario...">
+            </li>
+            <li class="nav-item" style="margin-right: 1%;">
+              <!-- Recordem que si posem (nomEvent) ho vincularà amb angular, per tant el mètode a d'exisitr en el controlador-->
+              <button class="btn btn-success" type="button" (click)="connectar()" *ngIf="!connectat" [disabled]="!mensaje.username || mensaje.username==''">Connectar</button>
+            </li>
+            <li class="nav-item">
+              <button class="btn btn-warning" type="button" (click)="desconnectar()" *ngIf="connectat">Desconnectar</button>
+            </li>
+          </ul>
+        </div>
+        <div class="card-body" #scrollChat [scrollTop]="scrollChat.scrollHeight" style="overflow-y: scroll;height: 360px;" *ngIf="connectat">
+          <ul class="list-group">
+            <!-- Indiquem que per cada element(els i diem mensaje) de mensajes faci un <li> i posi el text -->
+            <li class="list-group-item list-group-item-light" *ngFor="let mensaje of mensajes">
+              <span *ngIf="mensaje.tipo=='NUEVO_USUARIO'">{{mensaje.fecha | date:'shortTime'}} - {{mensaje.texto}} </span>
+              <span *ngIf="mensaje.tipo=='MENSAJE'">{{mensaje.fecha | date:'shortTime'}} - <span [ngStyle]="{'color': mensaje.color}">{{mensaje.username}}</span> dice :<br> {{mensaje.texto}}</span>
+            </li>
+          </ul>
+        </div>
+        <div class="card-footer" *ngIf="connectat">
+          <form class="form-inline">
+            <div class="form-group mx-3">
+              <!-- Vinculem amb ngModel el valor del input al atribut de l'objete mensaje.texto del controlador -->
+              <input class="form-control" type="text" placeholder="Escribe un mensaje" name="texto" [(ngModel)]="mensaje.texto " (keyup)="escribiendo()">
+              <button class="btn btn-primary" type="submit" (click)="enviarMensaje()">Enviar</button>
+            </div>
+          </form>
+          <div class="alert alert-info" *ngIf="escribiendoText!=''">{{escribiendoText}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

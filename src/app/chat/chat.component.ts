@@ -18,7 +18,13 @@ export class ChatComponent implements OnInit {
   mensajes:Mensaje[] = [];
   escribiendoText:string = "";
 
-  constructor() { }
+  //Identificador Unic per els clients
+  clientId:String="";
+
+  constructor() {
+    //Assignem el clientID la data en milis + un random
+    this.clientId = 'id-'+new Date().getUTCMilliseconds()+'-'+Math.random().toString(36).substr(2);
+   }
 
   ngOnInit(): void {
     //Inicialitzem el client de stomp
@@ -79,6 +85,23 @@ export class ChatComponent implements OnInit {
       this.mensaje.tipo='NUEVO_USUARIO';
       this.clientStomp.publish({destination:'/app/mensaje',body: JSON.stringify(this.mensaje)});
 
+      //Recuperar historial de mensajes
+      //Ens subscirbim al event /chat/historial del broker que ens retornarà un llistat de missatges
+      this.clientStomp.subscribe('/chat/historial/'+this.clientId,e=>{
+        //Convertim el body que rebem en pla a un array de mensajes
+        const historial = JSON.parse(e.body) as Mensaje[];
+        //La data que tenim als missatges és en milisegons, per tant indiquem amb .map que per cada missatge faci la conversió de la data
+        this.mensajes=historial.map(m => {
+          m.fecha = new Date(m.fecha);
+          return m;
+          //Fem el reverse perquè els ordeni de forma que a dalt hi hagi els antics
+        }).reverse();
+      });
+
+      //Notifiquem al broker que volem rebre els missatges amb publish que és el endpoint del controler @MessageMapping
+      //El body que passem és el paràmetre que rep aquesta funció al backend o em de convertir a JSON per poder enviar
+      this.clientStomp.publish({destination:'/app/historial', body: JSON.stringify(this.clientId)});
+
     }
 
     //Event per escoltar quant ens desconectem
@@ -88,6 +111,10 @@ export class ChatComponent implements OnInit {
       console.log("Desconnectado: "+!this.clientStomp.connected+" "+frame);
       //Assignem l'estat de la connexió a true.
       this.connectat = false;
+
+      //al desconectar fem que reinici els objectes
+      this.mensaje = new Mensaje();
+      this.mensajes = [];
     }
 
 
